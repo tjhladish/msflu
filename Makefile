@@ -1,4 +1,21 @@
+CFLAGS = -std=c++11 -O2
+#CFLAGS = -std=c++11 -Wall -O2
+ABCDIR = $(HOME)/work/AbcSmc
+SQLDIR = $(ABCDIR)/sqdb
+ABC_LIB = -L$(ABCDIR) -labc -ljsoncpp -lsqdb $(ABCDIR)/sqlite3.o
+GSL_LIB = -lm -L$$TACC_GSL_LIB/ -L$$HPC_GSL_LIB/ -lgsl -lgslcblas -lpthread -ldl
+
+INCLUDE = -I$(ABCDIR) -I$(SQLDIR) -I$(EPIFIRE)
+
 EPIFIRE = "/home/tjhladish/work/EpiFire/src/"
 
+all: libabc msmsc_abc
+
+libabc:  
+	$(MAKE) -C $(ABCDIR) -f Makefile all_no_mpi
+
+msmsc_abc: msmsc_abc.cpp MSMS_Cluster_Sim.h
+	g++-4.9 $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_abc.cpp -o msmsc_abc $(ABC_LIB) $(GSL_LIB)
+
 msmsc_sim: msmsc_sim.cpp MSMS_Cluster_Sim.h
-	g++ --std=c++11 -O2 -I $(EPIFIRE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_sim.cpp -o msmsc_sim
+	g++-4.9 $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_sim.cpp -o msmsc_sim

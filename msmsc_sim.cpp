@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     const double CHI = 0.7;
     const int j_max = 1;
     const int num_years = 50;
-    const double r_zero = 5;
+    const double r_zero = 2;
     const int heterotypic_immunity = 7;
     const vector<int> initial_exposed = {5, 5};
     const double mu = 0.01333;

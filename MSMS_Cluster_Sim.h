@@ -221,7 +221,7 @@ shuffle(Infected, mtrand);
 
         vector<int> final_size_by_strain() {
             vector< unordered_set<Node*> > recovered_sets(NumStrains);
-cerr << "tallying recovered: " << Recovered.size() << endl;
+//cerr << "tallying recovered: " << Recovered.size() << endl;
             for (Node* node: Recovered) { 
                 InfectionHistory* ih = NodeHist[node->get_id()];
                 for (int s = 0; s < NumStrains; ++s) {
@@ -279,7 +279,7 @@ cerr << "tallying recovered: " << Recovered.size() << endl;
                 }
 
                 vector<Node*> p_zeroes = rand_expose(InitialNumExposed, y, time);
-                cerr << "initally infected: " << p_zeroes.size() << endl;
+                //cerr << "initally infected: " << p_zeroes.size() << endl;
                 simulate_epidemic();
                 EpidemicSizes[y] = final_size_by_strain();
                 Recovered.clear();
