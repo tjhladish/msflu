@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     const double r_zero = 5;
     const int heterotypic_immunity = 7;
     const vector<int> initial_exposed = {5, 5};
-    const double mu = 0.02;
+    const double mu = 0.01333;
     const double cluster_jump = 0.2;
 
     MSMS_Cluster_Sim* sim = new MSMS_Cluster_Sim(net, CHI, r_zero, heterotypic_immunity, initial_exposed, num_years, mu, cluster_jump);
