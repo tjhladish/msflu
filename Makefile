@@ -1,3 +1,6 @@
+SHELL=/bin/bash
+G++VER := $(shell command -v g++-4.9)
+CPP = g++
 CFLAGS = -std=c++11 -O2
 #CFLAGS = -std=c++11 -Wall -O2
 ABCDIR = $(HOME)/work/AbcSmc
@@ -9,13 +12,18 @@ INCLUDE = -I$(ABCDIR) -I$(SQLDIR) -I$(EPIFIRE)
 
 EPIFIRE = "/home/tjhladish/work/EpiFire/src/"
 
-all: libabc msmsc_abc
+all: compiler libabc msmsc_abc
+
+compiler:
+ifdef G++VER
+CPP = g++-4.9
+endif
 
 libabc:  
-	$(MAKE) -C $(ABCDIR) -f Makefile all_no_mpi
+	$(MAKE) -C $(ABCDIR) -f Makefile
 
 msmsc_abc: msmsc_abc.cpp MSMS_Cluster_Sim.h
-	g++-4.9 $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_abc.cpp -o msmsc_abc $(ABC_LIB) $(GSL_LIB)
+	$(CPP) $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_abc.cpp -o msmsc_abc $(ABC_LIB) $(GSL_LIB)
 
 msmsc_sim: msmsc_sim.cpp MSMS_Cluster_Sim.h
-	g++-4.9 $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_sim.cpp -o msmsc_sim
+	$(CPP) $(CFLAGS) $(INCLUDE) $(EPIFIRE)*.o MSMS_Cluster_Sim.h msmsc_sim.cpp -o msmsc_sim
