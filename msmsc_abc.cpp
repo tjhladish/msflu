@@ -6,14 +6,37 @@
 #include <gsl/gsl_rng.h>
 
 
-const vector<int> POP_SIZES    = {(int) 1e5};
 const int BURNIN               = 50;
-const int FITTED_LENGTH        = 2016-1984;
+const int FITTED_LENGTH        = 2014-1985;
 const int RUN_LENGTH           = BURNIN + FITTED_LENGTH;
 const int HETEROTYPIC_IMMUNITY = 7;
-const double MU                = 0.02;
+const double MU                = 1.0/79.0;
 
 const gsl_rng* RNG = gsl_rng_alloc(gsl_rng_taus2);
+
+const vector<int> POP_SIZES = {267051, 218948, 141004, 153813, 212494,
+                               137046, 191325, 122308, 2147857, 229055,
+                               127498, 398423, 191164, 117157, 193259,
+                               277728, 139210, 807071, 453187};
+
+double metric(vector<double> &incidence, int idx) {
+    double val = 0;
+    ABC::Map<ABC::Col> col(&incidence[0], incidence.size()); // copy data from vector into Col
+    switch (idx){
+        case 0: val = ABC::mean(col);                           break;
+        case 1: val = quantile(incidence, 0.0);                 break;
+        case 2: val = quantile(incidence, 0.25);                break;
+        case 3: val = quantile(incidence, 0.5);                 break;
+        case 4: val = quantile(incidence, 0.75);                break;
+        case 5: val = quantile(incidence, 1.0);                 break;
+        case 6: val = sqrt(ABC::variance(col, ABC::mean(col))); break;
+        case 7: val = ABC::skewness(col);                       break;
+        case 8: val = ABC::median_crossings(col);               break;
+        default: cerr << "Unknown metric requested\n"; exit(-132);
+    }
+    return val;
+}
+
 
 void connect_network (Network* net) {
     vector<double> dist;
@@ -29,14 +52,22 @@ void connect_network (Network* net) {
     net->rand_connect_user(dist);
 }
 
-vector<long double> simulator(vector<long double> args, const unsigned long int rng_seed, const ABC::MPI_par*) {
-    vector<long double> metrics;
+vector<double> simulator(vector<double> args, const unsigned long int rng_seed, const unsigned long int serial, const ABC::MPI_par*) {
+    gsl_rng_set(RNG, rng_seed); // We're using two different RNGs for different things, unfortunately
+    vector<double> metrics;
     const double r_zero               = (double) args[0];
     const double chi                  = (double) args[1];
-    const vector<int> initial_exposed = {(int) args[2], (int) args[2]};
+    const vector<double> initial_exposed_per_100k = {pow(10,args[2]), pow(10,args[2])};
     const double cluster_jump         = (double) args[3];
+    const double h                    = (double) args[4]; // reported fraction
+    const int per_cap                 = 100000;
 
-    for ( int N: POP_SIZES) {
+    vector< vector<double> > case_mat(POP_SIZES.size());
+
+    for ( unsigned int i = 0; i < POP_SIZES.size(); ++i) {
+        cerr << i << "\t:";
+        const int N = POP_SIZES[i];
+        const vector<int> initial_exposed = {(int) (0.5 + N*initial_exposed_per_100k[0]/per_cap), (int) (0.5 + N*initial_exposed_per_100k[1]/per_cap)};
         Network* net = new Network("EpiNet", Network::Undirected);
         net->get_rng()->seed(rng_seed);
         net->populate(N);
@@ -46,15 +77,27 @@ vector<long double> simulator(vector<long double> args, const unsigned long int 
         sim->run_simulation();
         vector< vector<int> > final_sizes = sim->epidemic_sizes();
         vector<vector<int> > (final_sizes.begin()+BURNIN, final_sizes.end()).swap(final_sizes); // discard burn-in data
-        for (auto v: final_sizes) {
+        for (auto v: final_sizes) { // {H1, H3} pair for each year
+            const int fs = (int) (0.5 + per_cap*((float) v[0] + v[1])/N); // H1+H3 final size per 100k
+            cerr << " " << fs;
+            assert(fs >= 0);
+            const double reported = fs == 0 ? 0 : gsl_ran_binomial(RNG,h,fs);
+            case_mat[i].push_back(reported);
 //            cout << v[0] << " + " << v[1] << " = " << ((float) v[0] + v[1])/N << endl;
-            metrics.push_back(v[0]);
+            //metrics.push_back(v[0]);
         }
-        for (auto v: final_sizes) metrics.push_back(v[1]);
+        cerr << endl;
 
         delete sim;
         delete net;
     }
+
+    for (unsigned int met_idx = 0; met_idx < 9; ++met_idx) {
+        for (vector<double> incidence: case_mat) {
+            metrics.push_back(metric(incidence, met_idx));
+        }
+    }
+
     return metrics;
 }
 
