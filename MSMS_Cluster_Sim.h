@@ -89,7 +89,7 @@ class MSMS_Cluster_Sim: public Simulator {
             for (auto &e: NodeHist) e = new InfectionHistory();
         }
         void clear_node_histories() {
-            cerr << "node hist size: " << NodeHist.size() << endl;
+            //cerr << "node hist size: " << NodeHist.size() << endl;
             for(auto e: NodeHist) {
                 delete e;
             }
@@ -109,7 +109,7 @@ class MSMS_Cluster_Sim: public Simulator {
             this->T = temp_T < 0 ? 0 :
                       temp_T > 1 ? 1 :
                       temp_T;
-            cerr << "T: " << T << endl; return T;
+            //cerr << "T: " << T << endl; return T;
         }
 //double calc_naive_transmissibility(double R_zero) { this->T = 0.4; cerr << "T: " << T << endl; return T; }
         double get_naive_transmissibility() { return T; }
