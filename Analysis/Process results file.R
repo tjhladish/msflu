@@ -28,17 +28,25 @@ dbListTables(db)
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in all metrics
-metrics <- dbGetQuery(db, "SELECT * from metrics")
+basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J 
+                          where P.serial = M.serial 
+                          and P.serial = J.serial 
+                          and status = \'D\'
+                          and posterior > -1
+                          and smcSet = 7') 
+#metrics <- dbGetQuery(db, "SELECT * from metrics")
+#jobs <- dbGetQuery(db, "SELECT * from jobs")
+#pars <- dbGetQuery(db, "SELECT * from parameters")
 
 # these are the names of the metrics and the rows we want
 metric.names <- c("mean", "q0", "q25", "q50", "q75", "q100", "sd", "skew", "mc")
-these.rows <- 60001:70000
+these.rows <- 1:500
 
 # subset the parts of the metrics that we want (last SMC iteration)
 metric.subset <- list()
 for(i in seq_along(metric.names)) {
   print(i)
-  metric.subset[[metric.names[i]]] <- metrics[these.rows, grep(metric.names[i], colnames(metrics))]
+  metric.subset[[metric.names[i]]] <- basic[these.rows, grep(paste0(metric.names[i], "_"), colnames(basic))]
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
