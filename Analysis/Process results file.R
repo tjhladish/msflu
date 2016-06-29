@@ -16,6 +16,9 @@ if(Sys.info()[["user"]] %in% c("Rosalind", "eideregg")) {
 # read in location lookup
 lookup <- read.csv(paste0(folder_out, "20160628 - Name_Pop_Lookup.csv"), header=T, na.strings="-")
 lookup$Code <- gsub("-", "_", lookup$Code)
+lookup <- lookup[lookup$Used==1,]
+# read in so smallest first
+pop.order <- lookup[order(lookup$Pop_1999),]
 # read in epi data
 source(paste0(folder_repo, "Read in epidata.R"))
 
@@ -94,7 +97,9 @@ metric.subset <- list()
 for(i in seq_along(metric.names)) {
   print(i)
   metric.subset[[metric.names[i]]] <- basic[these.rows, grep(paste0(metric.names[i], "_"), colnames(basic))]
+  colnames(metric.subset[[metric.names[i]]]) <- gsub(metric.names[i], "FR", colnames(metric.subset[[metric.names[i]]]) )  
 }
+
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -104,8 +109,8 @@ points(data$metrics[grep("mean", data$metrics$name), "value"], pch=19, col="fire
 
 compare.this <- function(metric.name) {
   plot.this <- metric.name
-  boxplot(metric.subset[[plot.this]], main=metric.name)
-  points(data$metrics[grep(plot.this, data$metrics$name), "value"], pch=19, col="firebrick")
+  boxplot(metric.subset[[plot.this]][match(pop.order$Code, colnames(metric.subset[[plot.this]]))], main=metric.name)
+  points(data.metrics[[plot.this]]$value[match(pop.order$Code, data.metrics[[plot.this]]$location)], pch=19, col="firebrick")
 }
 
 par(mfrow=c(5,1))
