@@ -1,13 +1,27 @@
-setwd("~/Dropbox/LSHTM/Multi_season_flu_transfer/")
 
-# folder with outputs in
-folder_data <- "~/Dropbox/LSHTM/Multi_season_flu_transfer/"
+# set paths for who is working
+if(Sys.info()[["user"]] %in% c("Rosalind", "eideregg")) {
+  setwd("~/Dropbox/LSHTM/Multi_season_flu_transfer/")
+  # folder with outputs in
+  folder_data <- "~/Dropbox/LSHTM/Multi_season_flu_transfer/"
+  # folder with repo in 
+  folder_repo <- "~/Documents/Influenza/msflu/Analysis/"
+  # outputs folder
+  folder_out <- "~/Sync/LSHTM/Collaboration/Multiseason flu/"  
+} else {
+  # Tom's paths
+}
 
-# folder with repo in 
-folder_repo <- "~/Documents/Influenza/msflu/Analysis/"
+# # # # # # # # # # # # # # # # # # # # # # # # 
+# read in location lookup
+lookup <- read.csv(paste0(folder_out, "20160628 - Name_Pop_Lookup.csv"), header=T, na.strings="-")
+lookup$Code <- gsub("-", "_", lookup$Code)
+# read in epi data
+source(paste0(folder_repo, "Read in epidata.R"))
 
-# outputs folder
-folder_out <- "~/Sync/LSHTM/Collaboration/Multiseason flu/"
+
+# these are the names of the metrics and the rows we want
+metric.names <- c("mean", "q0", "q25", "q50", "q75", "q100", "sd", "skew", "mc")
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in json file
@@ -19,6 +33,40 @@ hist(data$metrics[grep("skew", data$metrics$name), "value"])
 hist(data$metrics[grep("q0", data$metrics$name), "value"])
 hist(data$metrics[grep("mc", data$metrics$name), "value"])
 
+# add place label to metrics
+data$metrics$location <- data$metrics$name
+for(i in seq_along(metric.names)) {
+  print(i)
+  data$metrics$location <- gsub(metric.names[i], "FR", data$metrics$location)
+}
+# remove the letter from the metric name
+data$metrics$name <- gsub("_[A-Z]", "", data$metrics$name)
+
+# transform to a list
+data.metrics <- list()
+for(i in seq_along(metric.names)) {
+  print(i)
+  data.metrics[[metric.names[i]]] <- data$metrics[grep(metric.names[i], data$metrics$name), c("location", "value")]
+  data.metrics[[metric.names[i]]]$population <- lookup$Pop_1999[match(data.metrics[[metric.names[i]]]$location, lookup$Code)]
+}
+
+# plot metric against pop size
+compare.xy <- function(metric.name) {
+  plot.this <- metric.name
+  plot(x=data.metrics[[plot.this]][ , "population"], y=data.metrics[[plot.this]][ , "value"], main="",
+       ylab="value", pch=19, col=transp("dodgerblue", 0.7),
+       log="x", bty="n", xlim=c(100000, max(lookup$Pop_1999, na.rm=T)))
+  legend("topleft", legend=metric.name, cex=1.7, col="white", lwd=2, bty="n")
+}
+
+par(mfrow=c(3,3), mar=c(3,4,1,0))
+for(i in metric.names) {
+  compare.xy(i)
+}
+
+compare.this("q50")
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in results
 require("RSQLite")
@@ -27,7 +75,7 @@ db = dbConnect(drv, "./msmsc_flu.sqlite")
 dbListTables(db)
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
-# read in all metrics
+# read in all fitted metrics
 basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J 
                           where P.serial = M.serial 
                           and P.serial = J.serial 
@@ -38,9 +86,8 @@ basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J
 #jobs <- dbGetQuery(db, "SELECT * from jobs")
 #pars <- dbGetQuery(db, "SELECT * from parameters")
 
-# these are the names of the metrics and the rows we want
-metric.names <- c("mean", "q0", "q25", "q50", "q75", "q100", "sd", "skew", "mc")
-these.rows <- 1:500
+# these are the rows we want
+these.rows <- 1:500 #deprecated
 
 # subset the parts of the metrics that we want (last SMC iteration)
 metric.subset <- list()
@@ -49,11 +96,6 @@ for(i in seq_along(metric.names)) {
   metric.subset[[metric.names[i]]] <- basic[these.rows, grep(paste0(metric.names[i], "_"), colnames(basic))]
 }
 
-# # # # # # # # # # # # # # # # # # # # # # # # 
-# read in location lookup
-lookup <- read.csv(paste0(folder_out, "20160628 - Name_Pop_Lookup.csv"), header=T, na.strings="-")
-# read in epi data
-source(paste0(folder_repo, "Read in epidata.R"))
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # Make plots of model metric vs observed
