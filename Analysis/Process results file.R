@@ -45,6 +45,12 @@ axis(1, at=seq(1:29), labels=as.character(seq(1986,2014)))
 boxplot(t(episizes), axes=F,  add=T, col=transp("white", 0))
 dev.off()
 
+pdf(paste0(folder_out, "population sizes.pdf"), height=3, width=6, useDingbats=F)
+par(mfrow=c(1,1), mar=c(4,4,0,0.5), las=1)
+hist(lookup$Pop_1999, col=transp("dodgerblue3", 0.6), xlim=c(1, max(lookup$Pop_1999)), 
+     breaks=30, main="", xlab="population")
+dev.off()
+
 library(fBasics)
 # example distribution of epi sizes
 pdf(paste0(folder_out, "example city epi size dist-plain.pdf"), height=6, width=8, useDingbats=F)
@@ -339,7 +345,7 @@ lines(strain2, type="l", ylim=c(0,1), col=transp("grey45", 0.6),
 points(strain2, col=transp("grey45", 0.6), cex=1.4, pch=15)
 
 # infections occur
-strain1 <- c(1,1, 0.6, 0.6, 0.6, 0.36, 1, 0.6, 0.6, 0.6, 0.6, 0.6, 1, 1)
+strain1 <- c(1,1, 0.6, 0.6, 0.6, 0.36, 1, 0.6, 0.6, 0.6, 0.36, 0.36, 1, 1)
 strain2 <- c(1,1,1,1, 0.6, 0.36, 0.36, 1, 1, 0.6, 0.6, 
              0.36, 0.36, 0.36)
 plot(strain1, type="l", ylim=c(0,1), col=transp("dodgerblue3", 0.6), 
