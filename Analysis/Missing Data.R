@@ -1,8 +1,8 @@
 getwd()
-setwd("~/Sync/Austin_Work_2/Multi-season flu/")
+setwd("~/Sync/LSHTM/Collaboration/Multiseason flu/")
 
 # read in raw data
-flu <- read.csv("20151207 - Sentinelles weekly per 100k.csv", row.names=1,
+flu <- read.csv("20160715 - Sentinelles weekly per 100k.csv", row.names=1,
                 na.strings="-")
 head(flu)
 
@@ -21,9 +21,25 @@ for(i in 1:22) {
 }
 dev.off()
 
+## split year and week
+library(stringr)
+flu$year <- str_sub(rownames(flu), start=1, end=4)
+flu$week <- str_sub(rownames(flu), start=5, end=6)
+
 
 ## read in tom's version which splits year and week
 flu <- read.csv("Sentinelles weekly per 100k_tjh.csv", stringsAsFactors=F)
+
+pdf("/Figures/Example region - Paris.pdf", height=4, width=20)
+par(las=1, mar=c(3,4,0.5,0.5), mfrow=c(1,1))
+plot(flu[,"FR.J"], type="l", xlab="", ylab="ILI incidence per 100000", axes=F)
+labels <- flu$year[flu$week==1]
+axis(1, at=which(flu$week==1), labels=labels)
+axis(2)
+box(bty="l")
+legend("topleft", legend="Paris", bty="n")
+dev.off()
+
 #remove anything between week 20 and week 40
 flu.season <- flu[(flu$week >= 40 | flu$week <= 20),]
 # cut off 1984
@@ -71,7 +87,7 @@ dev.off()
 flu.season[is.na(flu.season)] <- 0
 
 #write out
-write.csv(flu.season, "Sentinelles weekly per 100k clean.csv", row.names=F)
+write.csv(flu.season, "Sentinelles weekly per 100k clean v2.csv", row.names=F)
 
 #aggregate by season
 library(data.table)
@@ -80,7 +96,7 @@ flu.dt <- melt(flu.dt, id.vars="season", measure.vars=grep("FR",colnames(flu.dt)
 flu <- flu.dt[, list(total=sum(value)), by=c("season", "variable")]
 
 colnames(flu) <- c("season", "region", "total")
-write.csv(flu, "Sentinelles per 100k yearly long.csv", row.names=F)
+write.csv(flu, "Sentinelles per 100k yearly long v2.csv", row.names=F)
 
 flu.wide <- dcast(flu, formula=season ~ region)
-write.csv(flu.wide, "Sentinelles per 100k yearly wide.csv", row.names=F)
+write.csv(flu.wide, "Sentinelles per 100k yearly wide v2.csv", row.names=F)
