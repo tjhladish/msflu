@@ -39,7 +39,13 @@
          "dist_type"  : "UNIFORM",
          "num_type"   : "FLOAT",
          "par1"       : 0.0,
-         "par2"       : 1.0}
+         "par2"       : 1.0},
+
+        {"name"       : "noise",
+         "dist_type"  : "UNIFORM",
+         "num_type"   : "FLOAT",
+         "par1"       : 0.0,
+         "par2"       : 0.2}
     ],
 
     "metrics" : [
