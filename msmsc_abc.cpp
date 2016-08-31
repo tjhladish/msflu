@@ -58,6 +58,7 @@ vector<double> simulator(vector<double> args, const unsigned long int rng_seed, 
     const vector<double> initial_exposed_per_100k = {pow(10,args[2]), pow(10,args[2])};
     const double cluster_jump         = (double) args[3];
     const double h                    = (double) args[4]; // reported fraction
+    const double noise                = (double) args[5]; // per cap annual probability of non-flu ili
     const int per_cap                 = 100000;
 
     vector< vector<double> > case_mat(POP_SIZES.size());
@@ -81,8 +82,9 @@ vector<double> simulator(vector<double> args, const unsigned long int rng_seed, 
             const int fs = (int) (0.5 + per_cap*((float) v[0] + v[1])/N); // H1+H3 final size per 100k
             cerr << " " << fs;
             assert(fs >= 0);
-            const double reported = fs == 0 ? 0 : gsl_ran_binomial(RNG,h,fs);
-            case_mat[i].push_back(reported);
+            const double reported_flu = fs == 0 ? 0 : gsl_ran_binomial(RNG,h,fs);
+            const double reported_ili = reported_flu + gsl_ran_binomial(RNG,noise,per_cap); 
+            case_mat[i].push_back(reported_ili);
 //            cout << v[0] << " + " << v[1] << " = " << ((float) v[0] + v[1])/N << endl;
             //metrics.push_back(v[0]);
         }
