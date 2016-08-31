@@ -1,0 +1,51 @@
+Discussion points - Tom - 13/7/2016
+
+Possible changes:
+
+CODE:
+1. 2 R0 values
+Mean of the 2 R0 values as parameter, then ratio of R0s is also estimated
+So mean is X and ratio is 1 (or 1.2, etc)
+Tom thinks then that you can have a 95% CI on the ratio, and see if it includes 1
+might require arbitrarily setting one R0 to be bigger at the beginning
+
+2. Static populations - recalculated networks. To avoid problems with RAM.
+
+3. Add 2015/16 season - Roz to download and send.
+
+4. Possibly a relationship between prob of reporting, and susceptibility, i.e. that they’re proportional, and the more susceptible you are, the likelier you are to report. perhaps to estimate a linear relationship, and estimate the parameters of mx + c. What distribution?
+
+5. Autocorrelation metric of average # of years between above median epidemics.
+
+PLOTS:
+Try changing bins on R0 dist to see if it’s actually bimodal
+Make more example figures of epi sizes by year for chosen particles, just to have a look at.
+Bin sizes of histograms - make them the same
+Pairs plot of SMC set 12.
+
+INTERPRETATION:
+Re: reporting fraction. Not very identifiable. Probably there’s an effect of differential spreading, i.e. lower transmission from asymptomatic people.
+
+
+# Was discussed
+All cities the same because all networks the same
+do we need actually to run multiple sized cities?
+Are these the right metrics? More on autocorrelation?
+Distribution for CCI?
+
+==================================================================================================================
+
+Discussion with Tom 23-8-2015:
+
+To Do:
+Static network, so computer does not have to regenerate networks every time
+Have same sequence of cluster jumps in each place
+Have a non-flu ILI fraction in each place. binomially distributed non-flu ILI.
+Add new autocorrelation metric
+Maybe… Have 2 R0 values, as in previous Meeting notes
+
+The justification is that there is some non-flu reporting that will inflate ILI in each place
+Mean ratio of consecutive attack rates
+
+Roz to re-send new data without 2015 typo.
+Tom to implement 1, 2, 3 and 4, and to think about 5.
