@@ -39,14 +39,12 @@ double metric(vector<double> &incidence, int idx) {
 
 
 void connect_network (Network* net) {
-    vector<double> dist;
-    double deg_array[] = {0, 3, 45, 160, 393, 715, 883, 989, 897, 752,
+    vector<double> dist = {0, 3, 45, 160, 393, 715, 883, 989, 897, 752,
                           697, 755, 856, 1085, 1224, 1452, 1578, 1622, 1711, 1584,
                           1514, 1355, 1209, 990, 805, 597, 477, 353, 232, 177,
                           126, 90, 69, 54, 36, 29, 21, 16, 10, 5,
                           8, 13, 7, 9, 3, 1, 3, 3, 2, 5,
                           0, 1, 0, 0, 0, 1};
-    dist.assign(deg_array,deg_array+56);
 
     dist = normalize_dist(dist, sum(dist));
     net->rand_connect_user(dist);
@@ -64,6 +62,8 @@ vector<double> simulator(vector<double> args, const unsigned long int rng_seed, 
 
     vector< vector<double> > case_mat(POP_SIZES.size());
 
+    cerr << "serial: " << serial << endl;
+    cerr << "pars:"; for (double par: args) cerr << " " << par; cerr << endl;
     for ( unsigned int i = 0; i < POP_SIZES.size(); ++i) {
         cerr << i << "\t:";
         const int N = POP_SIZES[i];

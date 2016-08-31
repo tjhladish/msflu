@@ -89,7 +89,6 @@ class MSMS_Cluster_Sim: public Simulator {
             for (auto &e: NodeHist) e = new InfectionHistory();
         }
         void clear_node_histories() {
-            //cerr << "node hist size: " << NodeHist.size() << endl;
             for(auto e: NodeHist) {
                 delete e;
             }
@@ -109,9 +108,8 @@ class MSMS_Cluster_Sim: public Simulator {
             this->T = temp_T < 0 ? 0 :
                       temp_T > 1 ? 1 :
                       temp_T;
-            //cerr << "T: " << T << endl; return T;
         }
-//double calc_naive_transmissibility(double R_zero) { this->T = 0.4; cerr << "T: " << T << endl; return T; }
+
         double get_naive_transmissibility() { return T; }
 
         double get_transmissibility(Node* end, const int year, const int timestep, const StrainType strain) {
@@ -156,6 +154,8 @@ class MSMS_Cluster_Sim: public Simulator {
             vector<StrainType> exposure_types; 
             int total_exposures = 0;
             for ( unsigned int s = 0; s < initial_exposures_by_strain.size(); ++s ) {
+                // currently, a max of 100,000/n people can be exposed by each of n strains
+                // aka total_exposures must be <= pop size
                 total_exposures += initial_exposures_by_strain[s];
                 exposure_types.resize(total_exposures, (StrainType) s);
             }
