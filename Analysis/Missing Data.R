@@ -49,14 +49,14 @@ flu.season <- flu.season[!(flu.season$year=="1985"),]
 flu.season <- flu.season[!(flu.season$year=="1986" & flu.season$week<40),]
 
 #tidy tail, by removing 2015
-flu.season <- flu.season[!(flu.season$year=="2015" & flu.season$week>20),]
+flu.season <- flu.season[!(flu.season$year=="2016" & flu.season$week>20),]
 
 # remove provinces with missing data, FR-L (Limousin), FR-T and FR-H (Corse)
 flu.season <- flu.season[,!(colnames(flu.season) %in% c("FR.L", "FR.H", "FR.T"))]
   
 #label seasons. year is the year with week 40 in it, so 1986, goes week 40 1986 to week 201987
 flu.season$season <- 0
-for(k in 1986:2015) {
+for(k in 1986:2016) {
   for(j in 1:nrow(flu.season)) {
     if(flu.season$year[j]==k && flu.season$week[j]>=40){
       flu.season$season[j] <- k 
@@ -87,7 +87,7 @@ dev.off()
 flu.season[is.na(flu.season)] <- 0
 
 #write out
-write.csv(flu.season, "Sentinelles weekly per 100k clean v2.csv", row.names=F)
+write.csv(flu.season, "Sentinelles weekly per 100k clean_20160905.csv", row.names=F)
 
 #aggregate by season
 library(data.table)
@@ -96,7 +96,7 @@ flu.dt <- melt(flu.dt, id.vars="season", measure.vars=grep("FR",colnames(flu.dt)
 flu <- flu.dt[, list(total=sum(value)), by=c("season", "variable")]
 
 colnames(flu) <- c("season", "region", "total")
-write.csv(flu, "Sentinelles per 100k yearly long v2.csv", row.names=F)
+write.csv(flu, "Sentinelles per 100k yearly long_20160905.csv", row.names=F)
 
 flu.wide <- dcast(flu, formula=season ~ region)
-write.csv(flu.wide, "Sentinelles per 100k yearly wide v2.csv", row.names=F)
+write.csv(flu.wide, "Sentinelles per 100k yearly wide_20160905.csv", row.names=F)
