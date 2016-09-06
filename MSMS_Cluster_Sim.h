@@ -2,11 +2,13 @@
 #define MSMS_CLUSTER_SIM_H
 #include "Simulator.h"
 #include <unordered_set>
+#include <gsl/gsl_rng.h>
 
 //#include <assert.h>
 //#include <queue>
 
 const int NEVER = INT_MAX;
+extern const gsl_rng* CLUSTER_RNG;
 
 enum StrainType { H1N1,
                   H3N2,
@@ -274,7 +276,7 @@ shuffle(Infected, mtrand);
                 if (y > 0) {
                     age_network(Mu);
                     for (int s = 0; s < (int) NumStrains; ++s) {
-                        if (mtrand->rand() < ClusterJump) increment_cluster((StrainType) s); 
+                        if (gsl_rng_uniform(CLUSTER_RNG) < ClusterJump) increment_cluster((StrainType) s);
                     }     
                 }
 

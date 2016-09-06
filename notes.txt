@@ -38,11 +38,11 @@ Distribution for CCI?
 Discussion with Tom 23-8-2015:
 
 To Do:
-Static network, so computer does not have to regenerate networks every time
-Have same sequence of cluster jumps in each place
-Have a non-flu ILI fraction in each place. binomially distributed non-flu ILI.
-Add new autocorrelation metric
-Maybe… Have 2 R0 values, as in previous Meeting notes
+1. Static network, so computer does not have to regenerate networks every time
+2. Have same sequence of cluster jumps in each place
+3. Have a non-flu ILI fraction in each place. binomially distributed non-flu ILI. -- DONE
+4. Add new autocorrelation metric
+5. Maybe… Have 2 R0 values, as in previous Meeting notes
 
 The justification is that there is some non-flu reporting that will inflate ILI in each place
 Mean ratio of consecutive attack rates

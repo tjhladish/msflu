@@ -3,8 +3,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <cmath>
-#include <gsl/gsl_rng.h>
-
 
 const int BURNIN               = 50;
 const int FITTED_LENGTH        = 2014-1985;
@@ -13,6 +11,7 @@ const int HETEROTYPIC_IMMUNITY = 7;
 const double MU                = 1.0/79.0;
 
 const gsl_rng* RNG = gsl_rng_alloc(gsl_rng_taus2);
+const gsl_rng* CLUSTER_RNG = gsl_rng_alloc(gsl_rng_taus2);
 
 const vector<int> POP_SIZES = {267051, 218948, 141004, 153813, 212494,
                                137046, 191325, 122308, 2147857, 229055,
@@ -52,6 +51,8 @@ void connect_network (Network* net) {
 
 vector<double> simulator(vector<double> args, const unsigned long int rng_seed, const unsigned long int serial, const ABC::MPI_par*) {
     gsl_rng_set(RNG, rng_seed); // We're using two different RNGs for different things, unfortunately
+    const int cluster_seed = gsl_rng_get(RNG);
+
     vector<double> metrics;
     const double r_zero               = (double) args[0];
     const double chi                  = (double) args[1];
@@ -66,6 +67,7 @@ vector<double> simulator(vector<double> args, const unsigned long int rng_seed, 
     cerr << "serial: " << serial << endl;
     cerr << "pars:"; for (double par: args) cerr << " " << par; cerr << endl;
     for ( unsigned int i = 0; i < POP_SIZES.size(); ++i) {
+        gsl_rng_set(CLUSTER_RNG, cluster_seed); // always cluster jump the same way for all pops
         cerr << i << "\t:";
         const int N = POP_SIZES[i];
         const vector<int> initial_exposed = {(int) (0.5 + N*initial_exposed_per_100k[0]/per_cap), (int) (0.5 + N*initial_exposed_per_100k[1]/per_cap)};
