@@ -12,7 +12,7 @@ extern const gsl_rng* CLUSTER_RNG;
 
 enum StrainType { H1N1,
                   H3N2,
-                  NumStrains }; // must be last
+                  NUM_OF_STRAINS }; // must be last
 
 
 struct Infection { // strain type is the container index, i.e. position in InfectionHistory
@@ -31,15 +31,15 @@ struct InfectionHistory { // needs to persist across years
     vector<Infection*> infection_history;
     Infection* last;
 
-    InfectionHistory() { 
-        for (int i = 0; i<(int) NumStrains; ++i) {
+    InfectionHistory() {
+        for (int i = 0; i<(int) NUM_OF_STRAINS; ++i) {
             infection_history.push_back(new Infection());
         }
         last = nullptr;
     }
 
-    ~InfectionHistory() { 
-        for (auto& ih: infection_history) { 
+    ~InfectionHistory() {
+        for (auto& ih: infection_history) {
             delete ih;
         }
         last = nullptr;
@@ -60,19 +60,19 @@ class MSMS_Cluster_Sim: public Simulator {
     vector<int> InitialNumExposed;           // how many nodes for each strain to expose to spark epidemic
     vector<InfectionHistory*> NodeHist;      // infection history for all nodes
     vector<Node*> Infected;                  // list of infected nodes, so we don't have to check all nodes when transmitting
-    double T;                                // naive transmission probability
+    vector<double> T;                        // naive transmission probability for each strain
     vector<Node*> Recovered;                 // we don't need this for the simulation per se, but we do need it
                                              // in order to quickly reset the network to completely susceptible
     vector< vector<int> > EpidemicSizes;     // annual time series of epidemic sizes, by strain
     int Year;
     int NumYears;
-    
+
     public:
-        MSMS_Cluster_Sim():Simulator(), CI(0), Clusters({0,0}), T(1.0), HeterotypicImmunityDuration(7), NumYears(1), ClusterJump(1.0) {};
-        MSMS_Cluster_Sim(Network* net, double cluster_crossimmunity, double r_zero, int hid, vector<int> initial_exposed, int num_years, double mu, double cj)
-            :CI(cluster_crossimmunity), 
-             Clusters({0,0}), 
-             HeterotypicImmunityDuration(hid), 
+        MSMS_Cluster_Sim():Simulator(), CI(0), Clusters({0,0}), T(vector<double>((int) NUM_OF_STRAINS, 1.0)), HeterotypicImmunityDuration(7), NumYears(1), ClusterJump(1.0) {};
+        MSMS_Cluster_Sim(Network* net, double cluster_crossimmunity, vector<double> r_zero, int hid, vector<int> initial_exposed, int num_years, double mu, double cj)
+            :CI(cluster_crossimmunity),
+             Clusters({0,0}),
+             HeterotypicImmunityDuration(hid),
              InitialNumExposed(initial_exposed),
              NumYears(num_years),
              Mu(mu),
@@ -86,7 +86,7 @@ class MSMS_Cluster_Sim: public Simulator {
         }
 
         void initialize_node_histories() {
-            assert(net->size() > 0); 
+            assert(net->size() > 0);
             NodeHist = vector<InfectionHistory*>(net->size());
             for (auto &e: NodeHist) e = new InfectionHistory();
         }
@@ -96,8 +96,8 @@ class MSMS_Cluster_Sim: public Simulator {
             }
             NodeHist.clear();
         }
-        
-        void set_network( Network* net ) { 
+
+        void set_network( Network* net ) {
             Simulator::set_network( net );
             initialize_node_histories();
         };
@@ -105,17 +105,19 @@ class MSMS_Cluster_Sim: public Simulator {
         void set_cluster(StrainType s, int c) { Clusters[s] = c; }
         void increment_cluster(StrainType s) { ++Clusters[s]; }
 
-        double calc_naive_transmissibility(double R_zero) { 
-            const double temp_T = R_zero * calc_critical_transmissibility(); 
-            this->T = temp_T < 0 ? 0 :
-                      temp_T > 1 ? 1 :
-                      temp_T;
+        double calc_naive_transmissibility(vector<double> R_zero) {
+            for (unsigned int i = 0; i < R_zero.size(); ++i) {
+                const double temp_T = R_zero[i] * calc_critical_transmissibility();
+                this->T[i] = temp_T < 0 ? 0 :
+                             temp_T > 1 ? 1 :
+                             temp_T;
+            }
         }
 
-        double get_naive_transmissibility() { return T; }
+        double get_naive_transmissibility(const StrainType strain) { return T[(int) strain]; }
 
         double get_transmissibility(Node* end, const int year, const int timestep, const StrainType strain) {
-            return get_naive_transmissibility() * get_susceptibility(end, year, timestep, strain); // Transmission probability given immunity
+            return get_naive_transmissibility(strain) * get_susceptibility(end, year, timestep, strain); // Transmission probability given immunity
         }
 
 
@@ -126,7 +128,7 @@ class MSMS_Cluster_Sim: public Simulator {
         }
 
 
-        inline double get_susceptibility(Node* node, const int year, const int timestep, const StrainType challenging_strain) { 
+        inline double get_susceptibility(Node* node, const int year, const int timestep, const StrainType challenging_strain) {
             const int node_id = node->get_id();
             assert(node_id < NodeHist.size());
             Infection* last_infection = NodeHist[node_id]->last;
@@ -153,7 +155,7 @@ class MSMS_Cluster_Sim: public Simulator {
 
 
         vector<Node*> rand_expose (vector<int> initial_exposures_by_strain, const int year, const int timestep) {
-            vector<StrainType> exposure_types; 
+            vector<StrainType> exposure_types;
             int total_exposures = 0;
             for ( unsigned int s = 0; s < initial_exposures_by_strain.size(); ++s ) {
                 // currently, a max of 100,000/n people can be exposed by each of n strains
@@ -169,7 +171,7 @@ class MSMS_Cluster_Sim: public Simulator {
                 const StrainType strain = exposure_types[i];
                 Node* node = exposed_nodes[i];
                 //const int node_id = exposed_nodes[i]->get_id();
-                const double susceptibility = get_susceptibility(node, year, timestep, strain); 
+                const double susceptibility = get_susceptibility(node, year, timestep, strain);
                 if (mtrand->rand() < susceptibility) {
                     infect(node, strain, Clusters[strain], year, timestep);
                     Infected.push_back(node);
@@ -222,16 +224,16 @@ shuffle(Infected, mtrand);
 
 
         vector<int> final_size_by_strain() {
-            vector< unordered_set<Node*> > recovered_sets(NumStrains);
+            vector< unordered_set<Node*> > recovered_sets(NUM_OF_STRAINS);
 //cerr << "tallying recovered: " << Recovered.size() << endl;
-            for (Node* node: Recovered) { 
+            for (Node* node: Recovered) {
                 InfectionHistory* ih = NodeHist[node->get_id()];
-                for (int s = 0; s < NumStrains; ++s) {
+                for (int s = 0; s < NUM_OF_STRAINS; ++s) {
                     if (ih->strain((StrainType) s)->year == Year) recovered_sets[s].insert(node);
                 }
-            } 
-            vector<int> tally(NumStrains, 0);
-            for (int s = 0; s < NumStrains; ++s) tally[s] = recovered_sets[s].size();
+            }
+            vector<int> tally(NUM_OF_STRAINS, 0);
+            for (int s = 0; s < NUM_OF_STRAINS; ++s) tally[s] = recovered_sets[s].size();
             return tally;
         }
 
@@ -248,7 +250,7 @@ shuffle(Infected, mtrand);
                 int deg = nodes[i]->deg();
                 tk[deg] += get_transmissibility(nodes[i], Year, time, strain);
             }
-            
+
             average_tk.resize( tk.size() ); // average transmissibility of degree k nodes
             int deg_sum = sum(net->get_deg_series()); // sum of all degrees in the network, i.e. the total number of stubs
             for (int deg = 0; deg < (signed) tk.size(); deg++) {
@@ -267,7 +269,7 @@ shuffle(Infected, mtrand);
 
 
         void run_simulation() {
-            EpidemicSizes = vector< vector<int> > (NumYears, vector<int>(NumStrains, 0));
+            EpidemicSizes = vector< vector<int> > (NumYears, vector<int>(NUM_OF_STRAINS, 0));
             for (int y = 0; y<NumYears; ++y) {
                 Year = y;
                 reset_time();
@@ -275,9 +277,9 @@ shuffle(Infected, mtrand);
 
                 if (y > 0) {
                     age_network(Mu);
-                    for (int s = 0; s < (int) NumStrains; ++s) {
+                    for (int s = 0; s < (int) NUM_OF_STRAINS; ++s) {
                         if (gsl_rng_uniform(CLUSTER_RNG) < ClusterJump) increment_cluster((StrainType) s);
-                    }     
+                    }
                 }
 
                 vector<Node*> p_zeroes = rand_expose(InitialNumExposed, y, time);
@@ -290,13 +292,13 @@ shuffle(Infected, mtrand);
 
         void reset() {
             reset_time();
-            
+
             set_these_nodes_to_state(net->get_nodes(), -1);
             clear_node_histories();
             Infected.clear();
             Recovered.clear();
         }
-        
+
 };
 
 #endif

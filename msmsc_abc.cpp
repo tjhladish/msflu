@@ -10,6 +10,8 @@ const int RUN_LENGTH           = BURNIN + FITTED_LENGTH;
 const int HETEROTYPIC_IMMUNITY = 7;
 const double MU                = 1.0/79.0;
 
+enum SIZE_CHANGE{INCREASE, DECREASE};
+
 const gsl_rng* RNG = gsl_rng_alloc(gsl_rng_taus2);
 const gsl_rng* CLUSTER_RNG = gsl_rng_alloc(gsl_rng_taus2);
 
@@ -18,19 +20,37 @@ const vector<int> POP_SIZES = {267051, 218948, 141004, 153813, 212494,
                                127498, 398423, 191164, 117157, 193259,
                                277728, 139210, 807071, 453187};
 
+double mean_ratio(vector<double> &incidence, SIZE_CHANGE change) {
+    double running_sum = 0;
+    double n = 0;
+    for (unsigned int i = 1; i < incidence.size(); ++i) {
+        if (incidence[i] == incidence[i-1]) {
+            running_sum += 0.5;
+            n += 0.5;
+        } else if ((incidence[i] > incidence[i-1]) == (change == INCREASE)) {
+            const double denom = incidence[i-1] == 0 ? 1 : incidence[i-1];
+            running_sum += incidence[i] / denom;
+            n += 1;
+        }
+    }
+    return n == 0 ? 1 : running_sum / n;
+}
+
 double metric(vector<double> &incidence, int idx) {
     double val = 0;
     ABC::Map<ABC::Col> col(&incidence[0], incidence.size()); // copy data from vector into Col
     switch (idx){
-        case 0: val = ABC::mean(col);                           break;
-        case 1: val = quantile(incidence, 0.0);                 break;
-        case 2: val = quantile(incidence, 0.25);                break;
-        case 3: val = quantile(incidence, 0.5);                 break;
-        case 4: val = quantile(incidence, 0.75);                break;
-        case 5: val = quantile(incidence, 1.0);                 break;
-        case 6: val = sqrt(ABC::variance(col, ABC::mean(col))); break;
-        case 7: val = ABC::skewness(col);                       break;
-        case 8: val = ABC::median_crossings(col);               break;
+        case  0: val = ABC::mean(col);                           break;
+        case  1: val = quantile(incidence, 0.0);                 break;
+        case  2: val = quantile(incidence, 0.25);                break;
+        case  3: val = quantile(incidence, 0.5);                 break;
+        case  4: val = quantile(incidence, 0.75);                break;
+        case  5: val = quantile(incidence, 1.0);                 break;
+        case  6: val = sqrt(ABC::variance(col, ABC::mean(col))); break;
+        case  7: val = ABC::skewness(col);                       break;
+        case  8: val = ABC::median_crossings(col);               break;
+        case  9: val = mean_ratio(incidence, INCREASE);          break;
+        case 10: val = mean_ratio(incidence, DECREASE);          break;
         default: cerr << "Unknown metric requested\n"; exit(-132);
     }
     return val;
@@ -54,7 +74,7 @@ vector<double> simulator(vector<double> args, const unsigned long int rng_seed, 
     const int cluster_seed = gsl_rng_get(RNG);
 
     vector<double> metrics;
-    const double r_zero               = (double) args[0];
+    const vector<double>      r_zero(2, (double) args[0]); // to be tweaked when we re-parameterize in the json file
     const double chi                  = (double) args[1];
     const vector<double> initial_exposed_per_100k = {pow(10,args[2]), pow(10,args[2])};
     const double cluster_jump         = (double) args[3];
