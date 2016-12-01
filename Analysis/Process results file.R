@@ -29,14 +29,15 @@ transp <- function(col, alpha=.5){
   return(res)
 }  
 
-# do you want to make some plots of metrics and raw data?
-source(paste0(folder_repo, "plot observed data.R"))
-
-
 # these are the names of the metrics and the rows we want
 metric.names <- c("mean", "q0", "q25", "q50", "q75", "q100", "sd", "skew", "mc")
 
 metric.names <- c("mean", "q0", "q25", "q50", "q75", "q100", "sd", "skew", "mc", "mir", "mdr")
+
+# do you want to make some plots of metrics and raw data?
+# doesnt seem to work
+#source(paste0(folder_repo, "plot observed data.R"))
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in json file
@@ -210,12 +211,21 @@ compare.this <- function(metric.name) {
   boxplot(metric.subset[[plot.this]][match(pop.order$Code, colnames(metric.subset[[plot.this]]))], main=metric.name)
   points(data.metrics[[plot.this]]$value[match(pop.order$Code, data.metrics[[plot.this]]$location)], pch=19, col="firebrick")
 }
+compare.this.inv <- function(metric.name) {
+  plot.this <- metric.name
+  boxplot(1/metric.subset[[plot.this]][match(pop.order$Code, colnames(metric.subset[[plot.this]]))], main=metric.name)
+  points(1/data.metrics[[plot.this]]$value[match(pop.order$Code, data.metrics[[plot.this]]$location)], pch=19, col="firebrick")
+}
 
 pdf(paste0(folder_out, "compare obs v exp for each parameter - SMC", smc.set, ".pdf"), 
     height=12, width=9, useDingbats=F)
 par(mfrow=c(6,2), las=1, mar=c(3,4,2,1))
 for(i in metric.names) {
-  compare.this(i)
+  if(i =="mir") {
+    compare.this.inv(i)
+  } else{  
+    compare.this(i)
+  }
 }
 dev.off()
 
