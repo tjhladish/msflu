@@ -85,6 +85,7 @@ basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J
                           and status = \'D\'
                           and posterior > -1
                           and smcSet = 7') 
+
 #metrics <- dbGetQuery(db, "SELECT * from metrics")
 #jobs <- dbGetQuery(db, "SELECT * from jobs")
 #pars <- dbGetQuery(db, "SELECT * from parameters")
@@ -300,6 +301,11 @@ priors[["e_zero"]] <- c(0,5)
 priors[["CJ"]] <- c(0,1)
 priors[["h"]] <- c(0,1)
 #priors[["noise"]] <- c(0, 1)
+
+# make derived parameter
+pars$extra = pars$R0*(1-pars$CCI)*pars$h
+par.names <- c(par.names, "extra")
+priors[["extra"]] <- c(0,1)
 # plot posterior parameter distributions
 pdf(paste0(folder_out, "posterior par dists - SMC", smc.set, ".pdf"), height=8, width=6.5, useDingbats=F)
 par(mfrow=c(6,1), mar=c(2.5,4,0.5,0.5), las=1, cex=0.9)
@@ -311,7 +317,6 @@ dev.off()
 
 # pairs plot (simple)
 source("~/Documents/Influenza/msflu/Analysis/pairs.panels.R")
-pars$extra = pars$R0*(1-pars$CCI)*pars$h
 
 pdf(paste0(folder_out, "pairs plot fancy - SMC", smc.set, ".pdf"), height=6.5, width=6.5, useDingbats=F)
 pairs.panels(pars, rep(TRUE, 500), npar=6, nmet=0, points.col='#00000012', box.lwd=1, gap=0.5, method="pearson")
