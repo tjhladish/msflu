@@ -310,8 +310,11 @@ for(i in par.names) {
 dev.off()
 
 # pairs plot (simple)
-pdf(paste0(folder_out, "pairs plot simple - SMC", smc.set, ".pdf"), height=6.5, width=6.5, useDingbats=F)
-pairs(pars)
+source("~/Documents/Influenza/msflu/Analysis/pairs.panels.R")
+pars$extra = pars$R0*(1-pars$CCI)*pars$h
+
+pdf(paste0(folder_out, "pairs plot fancy - SMC", smc.set, ".pdf"), height=6.5, width=6.5, useDingbats=F)
+pairs.panels(pars, rep(TRUE, 500), npar=6, nmet=0, points.col='#00000012', box.lwd=1, gap=0.5, method="pearson")
 dev.off()
 
 ##### plot degree distribution
