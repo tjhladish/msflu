@@ -8,7 +8,7 @@ if(Sys.info()[["user"]] %in% c("Rosalind", "eideregg")) {
   folder_repo <- "~/Documents/Influenza/msflu/Analysis/"
   # outputs folder
   folder_out <- "~/Sync/LSHTM/Collaboration/Multiseason flu/Figures/"  
-  folder_out <- "~/Dropbox/LSHTM/Multi_season_flu_transfer/Figs_October/"
+  folder_out <- "~/Dropbox/LSHTM/Multi_season_flu_transfer/Figs_November/"
 } else {
   # Tom's paths
 }
@@ -22,6 +22,12 @@ lookup <- lookup[lookup$Used==1,]
 pop.order <- lookup[order(lookup$Pop_1999),]
 # read in epi data
 source(paste0(folder_repo, "Read in epidata.R"))
+
+# transparency function
+transp <- function(col, alpha=.5){
+  res <- apply(col2rgb(col),2, function(c) rgb(c[1]/255, c[2]/255, c[3]/255, alpha))
+  return(res)
+}  
 
 # do you want to make some plots of metrics and raw data?
 source(paste0(folder_repo, "plot observed data.R"))
@@ -60,20 +66,16 @@ for(i in seq_along(metric.names)) {
   data.metrics[[metric.names[i]]]$population <- lookup$Pop_1999[match(data.metrics[[metric.names[i]]]$location, lookup$Code)]
 }
 
-# transparancy function
-transp <- function(col, alpha=.5){
-  res <- apply(col2rgb(col),2, function(c) rgb(c[1]/255, c[2]/255, c[3]/255, alpha))
-  return(res)
-}  
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in results
 require("RSQLite")
 drv = dbDriver("SQLite")
-db = dbConnect(drv, "./msmsc_flu-rev4.sqlite")
+db = dbConnect(drv, "./msmsc_flu-rev5.sqlite")
 dbListTables(db)
 
+smc.set <- "7"
 # # # # # # # # # # # # # # # # # # # # # # # # 
 # read in all fitted metrics
 basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J 
@@ -81,7 +83,7 @@ basic <- dbGetQuery(db, 'select * from parameters P, metrics M, jobs J
                           and P.serial = J.serial 
                           and status = \'D\'
                           and posterior > -1
-                          and smcSet = 9') 
+                          and smcSet = 7') 
 #metrics <- dbGetQuery(db, "SELECT * from metrics")
 #jobs <- dbGetQuery(db, "SELECT * from jobs")
 #pars <- dbGetQuery(db, "SELECT * from parameters")
@@ -99,7 +101,7 @@ for(i in seq_along(metric.names)) {
 }
 
 # make a figure showing distribution of metrics for all cities
-pdf(paste0(folder_out, "compare obs vs exp metrics - SMC9.pdf"), height=7, width=7, useDingbats=F)
+pdf(paste0(folder_out, "compare obs vs exp metrics - SMC", smc.set, ".pdf"), height=7, width=7, useDingbats=F)
 par(mfrow=c(4,3), mar=c(2.5,2,1,0.5), las=1)
 for(k in metric.names) {
   if(k =="mir") {
@@ -209,10 +211,13 @@ compare.this <- function(metric.name) {
   points(data.metrics[[plot.this]]$value[match(pop.order$Code, data.metrics[[plot.this]]$location)], pch=19, col="firebrick")
 }
 
-par(mfrow=c(5,1))
+pdf(paste0(folder_out, "compare obs v exp for each parameter - SMC", smc.set, ".pdf"), 
+    height=12, width=9, useDingbats=F)
+par(mfrow=c(6,2), las=1, mar=c(3,4,2,1))
 for(i in metric.names) {
   compare.this(i)
 }
+dev.off()
 
 regions <- colnames(metric.subset[["mean"]])
 this.region <- regions[1]
@@ -227,7 +232,7 @@ for(i in 2:19) {
 }
 
 # make a plot of observed vs expected
-pdf(paste0(folder_out, "compare obs v exp - SMC9.pdf"), height=9, width=9, useDingbats=F)
+pdf(paste0(folder_out, "compare obs v exp - SMC", smc.set, ".pdf"), height=9, width=9, useDingbats=F)
 par(mfrow=c(3,3), mar=c(3,3.25,0.5,0.5), las=1, cex=0.9, lwd=0.75)
 for(j in metric.names) {
   print(j)
@@ -252,12 +257,13 @@ for(j in metric.names) {
   #legend("topright", legend=j, cex=1.7, col="white", lwd=2, bty="n")
 }
 dev.off()
+
 plot(x=rep(data.metrics[["mean"]][data.metrics[["mean"]]$location=="FR_A", "value"], 500),
      y=metric.subset[["mean"]][, which(colnames(metric.subset[["mean"]])=="FR_A")])
 compare.this("q50")
 
 # extract parameter results 
-par.names <- c("R0", "CCI", "e_zero", "CJ", "h", "noise")
+par.names <- c("R0", "CCI", "e_zero", "CJ", "h") #, "noise")
 pars <- basic[, par.names]
 par.results <- c()
 for(i in par.names) {
@@ -271,7 +277,7 @@ rownames(par.results) <- par.names
 
 par.results["e_zero", ] <- 10^par.results["e_zero", ]
 par.results["CJ", ] <- 1/par.results["CJ", ]
-par.results["noise",] <- 10^par.results["noise", ]
+#par.results["noise",] <- 10^par.results["noise", ]
 
 # print the means, medians etc.
 print(par.results)
@@ -283,9 +289,9 @@ priors[["CCI"]] <- c(0, 1)
 priors[["e_zero"]] <- c(0,5)
 priors[["CJ"]] <- c(0,1)
 priors[["h"]] <- c(0,1)
-priors[["noise"]] <- c(0, 1)
+#priors[["noise"]] <- c(0, 1)
 # plot posterior parameter distributions
-pdf(paste0(folder_out, "posterior par dists.pdf"), height=8, width=6.5, useDingbats=F)
+pdf(paste0(folder_out, "posterior par dists - SMC", smc.set, ".pdf"), height=8, width=6.5, useDingbats=F)
 par(mfrow=c(6,1), mar=c(2.5,4,0.5,0.5), las=1, cex=0.9)
 for(i in par.names) {
   hist(pars[, i], xlim=priors[[i]], breaks=20, main="", xlab="", col=transp("dodgerblue", 0.7))
@@ -293,7 +299,10 @@ for(i in par.names) {
 }
 dev.off()
 
+# pairs plot (simple)
+pdf(paste0(folder_out, "pairs plot simple - SMC", smc.set, ".pdf"), height=6.5, width=6.5, useDingbats=F)
 pairs(pars)
+dev.off()
 
 ##### plot degree distribution
 deg.dist <- c(0, 3, 45, 160, 393, 715, 883, 989, 897, 752,
